@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  role_name: nginx
+  author: jengsala
+  description: >-
+    Install and configure nginx.
+  license: MIT
+  min_ansible_version: '2.14.1'
+  platforms:
+    - name: Debian
+      versions:
+        - buster
+        - bullseye
+        - bookworm
+    - name: Ubuntu
+      versions:
+        - bionic
+        - focal
+        - jammy
+  galaxy_tags:
+    - nginx

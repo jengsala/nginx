@@ -1,0 +1,14 @@
+---
+nginx_get_cert: >-
+  {{ item.content | regex_search('\n\s*ssl_certificate\s+([^;]+);', '\1') }}
+nginx_get_key: >-
+  {{ item.content | regex_search('\n\s*ssl_certificate_key\s+([^;]+);', '\1') }}
+nginx_path: /etc/nginx
+nginx_backup_condition: >-
+  {{ nginx_backup and nginx_vhosts | length > 0 }}
+nginx_previous_restore_condition: >-
+  {{ nginx_backup and nginx_backup_exists.stat.exists }}
+nginx_vhost_disable_condition: >-
+  {{ (item.state is defined and item.state == 'absent') or (item.enabled is defined and not item.enabled) }}
+nginx_default_cert: "/etc/ssl/certs/ssl-cert-snakeoil.pem"
+nginx_default_key: "/etc/ssl/private/ssl-cert-snakeoil.key"

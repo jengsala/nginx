@@ -1,0 +1,125 @@
+---
+nginx_vhosts:
+  - name: "minio.digitastuces.com.conf"
+    content: |-
+      upstream minio_s3 {
+        least_conn;
+        server 127.0.0.1:9000;
+      }
+
+      upstream minio_console {
+        least_conn;
+        server 127.0.0.1:9664;
+      }
+
+      server {
+        listen       80;
+        listen  [::]:80;
+        server_name  {{ ansible_hostname }};
+
+        ignore_invalid_headers off;
+        client_max_body_size 0;
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        location / {
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_connect_timeout 300;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            chunked_transfer_encoding off;
+            proxy_pass http://minio_s3;
+        }
+      }
+
+      server {
+        listen       80;
+        listen  [::]:80;
+        server_name  console.digitastuces.com;
+        ignore_invalid_headers off;
+        client_max_body_size 0;
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        location / {
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-NginX-Proxy true;
+
+            real_ip_header X-Real-IP;
+            proxy_connect_timeout 300;
+
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            chunked_transfer_encoding off;
+            proxy_pass http://minio_console/;
+        }
+      }
+
+      server {
+        listen       443 ssl;
+        listen  [::]:443;
+        server_name  {{ ansible_hostname }};
+
+        ignore_invalid_headers off;
+        client_max_body_size 0;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        ## include snippets/snakeoil.conf;
+
+        ssl_certificate             /invalid/path/cert.pem;
+        ssl_certificate_key         /invalid/path/privkey.pem;
+
+        location / {
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            proxy_connect_timeout 300;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            chunked_transfer_encoding off;
+            proxy_pass https://minio_s3;
+        }
+      }
+
+      server {
+
+        listen       443 ssl;
+        listen  [::]:443;
+        server_name  console.digitastuces.com;
+
+        ignore_invalid_headers off;
+        client_max_body_size 0;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        include snippets/snakeoil.conf;
+
+        location / {
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-NginX-Proxy true;
+
+            real_ip_header X-Real-IP;
+            proxy_connect_timeout 300;
+
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            chunked_transfer_encoding off;
+            proxy_pass https://minio_console/;
+        }
+      }
+nginx_vhosts_remove: false
+nginx_state: "present"
+nginx_backup: true
+nginx_backup_file: "/etc/nginx.backup/nginx.tar.gz"

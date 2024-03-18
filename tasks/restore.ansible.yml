@@ -1,0 +1,21 @@
+---
+- name: Remove current nginx config
+  ansible.builtin.file:
+    path: "{{ nginx_path }}"
+    state: absent
+  become: true
+
+- name: Restore backup
+  ansible.builtin.unarchive:
+    src: "{{ nginx_backup_file }}"
+    dest: "{{ nginx_path | dirname }}"
+    remote_src: true
+  become: true
+  notify: Reload nginx
+
+- name: Delete backup
+  ansible.builtin.file:
+    path: "{{ nginx_backup_file }}"
+    state: absent
+  changed_when: false
+  become: true
